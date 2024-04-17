@@ -1,0 +1,45 @@
+import requests
+import json
+import hashlib
+import hmac
+import time
+
+# 替换成你的API密钥
+api_key = ''
+api_secret = ''
+
+# 计算签名
+def generate_signature(api_key, api_secret, params):
+    sign = ''
+    for key in sorted(params.keys()):
+        sign += key + '=' + str(params[key]) + '&'
+    sign = sign[:-1]
+    sign = hmac.new(api_secret.encode('utf-8'), sign.encode('utf-8'), hashlib.sha256).hexdigest()
+    return sign
+
+# 获取账户余额
+def get_account_balance(api_key, api_secret):
+    url = 'https://www.okex.com/api/v5/account/balance'
+    timestamp = str(int(time.time() * 1000))
+    headers = {
+        'Content-Type': 'application/json',
+        'OK-ACCESS-KEY': api_key,
+        'OK-ACCESS-TIMESTAMP': timestamp,
+    }
+    params = {
+        'currency': 'BTC',  # 替换成你想查询的币种
+    }
+    signature = generate_signature(api_key, api_secret, params)
+    headers['OK-ACCESS-SIGN'] = signature
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return None
+
+# 调用函数获取账户余额信息
+balance_info = get_account_balance(api_key, api_secret)
+if balance_info:
+    print(json.dumps(balance_info, indent=4))
+else:
+    print("Failed to retrieve account balance.")
